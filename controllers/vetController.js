@@ -1,4 +1,5 @@
 import Vet from "../models/Vet.js";
+import generateJWT from "../helpers/generateJWT.js";
 
 const register = async (req, res) => {
     const { email } = req.body;
@@ -21,7 +22,9 @@ const register = async (req, res) => {
 };
 
 const profile = (req, res) => {
-    res.json({ "message": "showing profile" })
+    console.log(req.vet);
+    const { vet } = req;
+    res.json({ vet })
 }
 
 const confirm = async (req, res) => {
@@ -54,18 +57,24 @@ const auth = async (req, res) => {
     }
 
     // user is confirmed?
-    if(!user.confirmed) {
+    if (!user.confirmed) {
         const error = new Error('Your account has not been confirmed yet');
-        return res.status(404).json({msg: error.message});
+        return res.status(404).json({ msg: error.message });
     }
 
     // check password
-    if(await user.checkPassword(password)) {
+    if (await user.checkPassword(password)) {
+        console.log(user);
+        res.json({ token: generateJWT(user.id) });
         console.log('Success. Logged!');
     } else {
         const error = new Error('Incorrect password.');
-        return res.status(403).json({msg: error.message});
+        return res.status(403).json({ msg: error.message });
     }
+}
+
+const forgotPassword = (req, res) => {
+    
 }
 
 export {
@@ -73,4 +82,6 @@ export {
     profile,
     confirm,
     auth,
+    forgotPassword,
+
 }
