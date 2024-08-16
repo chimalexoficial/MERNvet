@@ -1,5 +1,6 @@
 import Vet from "../models/Vet.js";
 import generateJWT from "../helpers/generateJWT.js";
+import generateID from "../helpers/generateID.js";
 
 const register = async (req, res) => {
     const { email } = req.body;
@@ -73,8 +74,52 @@ const auth = async (req, res) => {
     }
 }
 
-const forgotPassword = (req, res) => {
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    const existVet = await Vet.findOne({ email });
+    if (!existVet) {
+        const error = new Error('The user does not exist');
+        return res.status(400).json(error.message);
+    }
+
+    try {
+        existVet.token = generateID();
+        await existVet.save();
+        res.json({ "msg": "Instructions to reset password sent" })
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const verifyToken = async (req, res) => {
+    const { token } = req.params;
+    const validToken = await Vet.findOne({ token });
+    if (validToken) {
+        console.log('Token found');
+    } else {
+        const error = new Error('Invalid token');
+        return res.status(400).json({ "msg": error.message });
+    }
+}
+
+const newPassword = async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    const vetToken = await Vet.findOne({ token });
+    if (!vetToken) {
+        const error = new Error('There was an error');
+        return res.status(400).json({ "msg": error.message });
+    }
     
+    try {
+        vetToken.token = null;
+        vetToken.password = password;
+        await vetToken.save();
+        res.json({"msg":'Password changed'})
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 export {
@@ -83,5 +128,6 @@ export {
     confirm,
     auth,
     forgotPassword,
-
+    verifyToken,
+    newPassword
 }
